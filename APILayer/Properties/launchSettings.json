@@ -19,7 +19,10 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "MYSQL_HOST": "localhost",
         "MYSQL_PASSWORD": "user@1234",
-        "MYSQL_PORT": "3306"
+        "MYSQL_PORT": "3306",
+        "MYSQL_DATABASE": "ecommerceproductsdatabase",
+        "MYSQL_USERID": "root",
+   
       }
     },
     "https": {
@@ -32,7 +35,9 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "MYSQL_HOST": "localhost",
         "MYSQL_PASSWORD": "user@1234",
-        "MYSQL_PORT": "3306"
+        "MYSQL_PORT": "3306",
+        "MYSQL_DATABASE": "ecommerceproductsdatabase",
+        "MYSQL_USERID": "root"
       }
     },
     "IIS Express": {

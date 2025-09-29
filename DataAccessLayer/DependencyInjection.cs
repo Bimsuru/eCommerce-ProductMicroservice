@@ -16,7 +16,9 @@ public static class DependencyInjection
 
         string connectionString = connectionStringTemplate.Replace("$MYSQL_HOST", Environment.GetEnvironmentVariable("MYSQL_HOST"))
                                                           .Replace("$MYSQL_PASSWORD", Environment.GetEnvironmentVariable("MYSQL_PASSWORD"))
-                                                          .Replace("$MYSQL_PORT", Environment.GetEnvironmentVariable("MYSQL_PORT"));
+                                                          .Replace("$MYSQL_PORT", Environment.GetEnvironmentVariable("MYSQL_PORT"))
+                                                          .Replace("$MYSQL_DATABASE", Environment.GetEnvironmentVariable("MYSQL_DATABASE"))
+                                                          .Replace("$MYSQL_USERID", Environment.GetEnvironmentVariable("MYSQL_USERID"));
                                                           
 
 

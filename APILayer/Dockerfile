@@ -24,4 +24,6 @@ COPY --from=publish /app/publish .
 ENV MYSQL_HOST=localhost
 ENV MYSQL_PASSWORD=user@1234
 ENV MYSQL_PORT=3306
+ENV MYSQL_DATABASE=ecommerceproductsdatabase
+ENV MYSQL_USERID=root
 ENTRYPOINT ["dotnet", "APILayer.dll"]
