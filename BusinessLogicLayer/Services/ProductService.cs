@@ -1,12 +1,12 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using BusinessLogicLayer.DTO;
+using BusinessLogicLayer.RabbitMQ;
 using BusinessLogicLayer.ServiceContracts;
 using DataAccessLayer.Entities;
 using DataAccessLayer.RepositoryContracts;
 using FluentValidation;
 using FluentValidation.Results;
-using Microsoft.AspNetCore.Mvc;
 
 namespace BusinessLogicLayer.Services;
 
@@ -16,12 +16,15 @@ public class ProductService : IProductService
     private readonly IProductRepository _productRepository;
     private readonly IValidator<ProductAddRequest> _productAddRequestvalidator;
     private readonly IValidator<ProductUpdateRequest> _productUpdateRequestvalidator;
-    public ProductService(IMapper mapper, IProductRepository productRepository, IValidator<ProductAddRequest> productAddRequestvalidator, IValidator<ProductUpdateRequest> productUpdateRequestvalidator)
+    private readonly IRabbitMQPublisher _rabbitMQPublisher;
+    public ProductService(IMapper mapper, IProductRepository productRepository, IValidator<ProductAddRequest> productAddRequestvalidator,
+                            IValidator<ProductUpdateRequest> productUpdateRequestvalidator, IRabbitMQPublisher rabbitMQPublisher)
     {
         _mapper = mapper;
         _productRepository = productRepository;
         _productAddRequestvalidator = productAddRequestvalidator;
         _productUpdateRequestvalidator = productUpdateRequestvalidator;
+        _rabbitMQPublisher = rabbitMQPublisher;
     }
     public async Task<ProductResponse?> AddProduct(ProductAddRequest productAddRequest)
     {
@@ -98,7 +101,7 @@ public class ProductService : IProductService
     public async Task<ProductResponse?> UpdateProduct(ProductUpdateRequest productUpdateRequest)
     {
         // Check exittingProduct object in db using productId
-        var exittingProduct = _productRepository.GetProductByCondition(temp => temp.ProductID == productUpdateRequest.ProductID);
+        var exittingProduct = await _productRepository.GetProductByCondition(temp => temp.ProductID == productUpdateRequest.ProductID);
 
         if (exittingProduct == null)
         {
@@ -118,13 +121,30 @@ public class ProductService : IProductService
         // Mapped UpdateReq model into product 
         var product = _mapper.Map<Product>(productUpdateRequest);
 
+        bool IsProductNameUpdated = false;
+
+        // check existing productName and to be updated productname same or not
+        if(exittingProduct!.ProductName != productUpdateRequest.ProductName)
+        {
+            IsProductNameUpdated = true;
+        }
+
         var updateProduct = await _productRepository.UpdateProduct(product);
 
-        if (updateProduct != null)
+        if (IsProductNameUpdated)
         {
-            return _mapper.Map<ProductResponse>(updateProduct);
+            // invoke to the rabbit mq product.update.name routingKey this publisher method
+            string routingKey = "product.update.name";
+            var message = new ProductUpdateMessage(updateProduct!.ProductID, updateProduct.ProductName);
+            
+            _rabbitMQPublisher.Publisher<ProductUpdateMessage>(routingKey, message);
         }
-        else
-            return null;
+
+        if (updateProduct != null)
+            {
+                return _mapper.Map<ProductResponse>(updateProduct);
+            }
+            else
+                return null;
     }
 }
