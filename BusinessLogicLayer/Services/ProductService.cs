@@ -67,6 +67,12 @@ public class ProductService : IProductService
 
         bool IsDeleted = await _productRepository.DeleteProduct(exittingProduct.ProductID);
 
+        if (IsDeleted == true)
+        {
+            string routingKey = "product.delete";
+            var message = new ProductDeleteMessage(exittingProduct.ProductID, exittingProduct.ProductName);
+            _rabbitMQPublisher.Publisher<ProductDeleteMessage>(routingKey, message);
+        }
         return IsDeleted;
     }
 
