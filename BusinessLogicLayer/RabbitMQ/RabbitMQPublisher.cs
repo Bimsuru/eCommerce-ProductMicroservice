@@ -31,7 +31,7 @@ public class RabbitMQPublisher : IRabbitMQPublisher, IDisposable
 
         _channel = _connection.CreateModel();
     }
-    public void Publisher<T>(string? routingKey, T message)
+    public void Publisher<T>(Dictionary<string, object> headers, T message)
     {
         // message convert into json 
         string messageJson = JsonSerializer.Serialize(message);
@@ -42,10 +42,13 @@ public class RabbitMQPublisher : IRabbitMQPublisher, IDisposable
         // Create exchange name and exchange
         string exchangeName = _configuration["RabbitMQ_Products_Exchange"]!;
 
-        _channel.ExchangeDeclare(exchange: exchangeName, durable: true, type: ExchangeType.Direct);
+        _channel.ExchangeDeclare(exchange: exchangeName, durable: true, type: ExchangeType.Headers);
 
         // Publish the message
-        _channel.BasicPublish(exchange: exchangeName, routingKey: routingKey, body: messageBodyInBytes, basicProperties: null);
+        var basicProperties = _channel.CreateBasicProperties();
+        basicProperties.Headers = headers;
+
+        _channel.BasicPublish(exchange: exchangeName, routingKey: string.Empty, body: messageBodyInBytes, basicProperties: basicProperties);
     }
 
     public void Dispose()

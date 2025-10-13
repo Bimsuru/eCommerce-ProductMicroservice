@@ -2,5 +2,5 @@ namespace BusinessLogicLayer.RabbitMQ;
 
 public interface IRabbitMQPublisher
 {
-    void Publisher<T>(string? routingKey, T message);
+    void Publisher<T>(Dictionary<string, object> headers, T message);
 }

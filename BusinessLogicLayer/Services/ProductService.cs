@@ -69,9 +69,13 @@ public class ProductService : IProductService
 
         if (IsDeleted == true)
         {
-            string routingKey = "product.delete";
+            var headers = new Dictionary<string, object>()
+            {
+                {"event" , "product.delete"},
+                {"RowCount" , 1},
+            };
             var message = new ProductDeleteMessage(exittingProduct.ProductID, exittingProduct.ProductName);
-            _rabbitMQPublisher.Publisher<ProductDeleteMessage>(routingKey, message);
+            _rabbitMQPublisher.Publisher<ProductDeleteMessage>(headers, message);
         }
         return IsDeleted;
     }
@@ -115,7 +119,7 @@ public class ProductService : IProductService
         }
 
         // Fluent validation 
-            ValidationResult validationResult = await _productUpdateRequestvalidator.ValidateAsync(productUpdateRequest);
+        ValidationResult validationResult = await _productUpdateRequestvalidator.ValidateAsync(productUpdateRequest);
 
         // Check IsValid or not
         if (!validationResult.IsValid)
@@ -127,30 +131,30 @@ public class ProductService : IProductService
         // Mapped UpdateReq model into product 
         var product = _mapper.Map<Product>(productUpdateRequest);
 
-        bool IsProductNameUpdated = false;
+        // bool IsProductNameUpdated = false;
 
-        // check existing productName and to be updated productname same or not
-        if(exittingProduct!.ProductName != productUpdateRequest.ProductName)
-        {
-            IsProductNameUpdated = true;
-        }
+        // // check existing productName and to be updated productname same or not
+        // if (exittingProduct!.ProductName != productUpdateRequest.ProductName)
+        // {
+        //     IsProductNameUpdated = true;
+        // }
 
         var updateProduct = await _productRepository.UpdateProduct(product);
 
-        if (IsProductNameUpdated)
-        {
-            // invoke to the rabbit mq product.update.name routingKey this publisher method
-            string routingKey = "product.update.name";
-            var message = new ProductUpdateMessage(updateProduct!.ProductID, updateProduct.ProductName);
-            
-            _rabbitMQPublisher.Publisher<ProductUpdateMessage>(routingKey, message);
-        }
-
         if (updateProduct != null)
+        {
+            var headers = new Dictionary<string, object>()
             {
-                return _mapper.Map<ProductResponse>(updateProduct);
-            }
-            else
-                return null;
+                {"event" , "product.update"},
+                {"RowCount" , 1},
+            };
+            
+            _rabbitMQPublisher.Publisher<Product>(headers, updateProduct);
+
+            return _mapper.Map<ProductResponse>(updateProduct);
+
+        }
+        else
+            return null;
     }
 }
